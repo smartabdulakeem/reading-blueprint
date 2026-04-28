@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Voice Selector — Demo | The Reading Blueprint</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Source+Serif+4:ital,wght@0,300;0,400;0,600;1,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #1C1A17; --paper: #FAF7F2; --cream: #F2EDE4; --gold: #B8860B;
+    --gold-light: #F5E6B0; --rust: #C0392B; --forest: #2C5F2E;
+    --muted: #7A7468; --border: rgba(28,26,23,0.12); --radius: 10px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Source Serif 4', Georgia, serif; background: var(--paper); color: var(--ink); }
+
+  /* ── SITE HEADER ── */
+  .site-header { background: var(--ink); padding: 0.75rem 2rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
+  .site-header .brand { font-family: 'Playfair Display', serif; color: var(--gold); font-size: 14px; letter-spacing: 1.5px; text-transform: uppercase; }
+  .site-header .phase-tag { font-size: 12px; color: rgba(255,255,255,0.5); letter-spacing: 1px; text-transform: uppercase; }
+
+  /* ══════════════════════════════════════════════
+     VOICE CONTROL BAR — copy this entire block
+     into every chapter file, right after <body>
+     and the site-header
+  ══════════════════════════════════════════════ */
+  .voice-bar {
+    background: #fff;
+    border-bottom: 1px solid var(--border);
+    padding: 8px 2rem;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 8px rgba(28,26,23,0.06);
+  }
+  .voice-bar-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--muted);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .voice-select {
+    flex: 1;
+    min-width: 180px;
+    max-width: 320px;
+    padding: 6px 10px;
+    font-family: 'Source Serif 4', serif;
+    font-size: 13px;
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    background: var(--cream);
+    color: var(--ink);
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%237A7468' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    padding-right: 28px;
+  }
+  .voice-select:focus { outline: none; border-color: var(--gold); }
+  .speed-group {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+  }
+  .speed-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--muted);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-right: 4px;
+  }
+  .speed-btn {
+    padding: 5px 12px;
+    font-family: 'Source Serif 4', serif;
+    font-size: 12px;
+    font-weight: 600;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--cream);
+    color: var(--muted);
+    cursor: pointer;
+    transition: all .15s;
+  }
+  .speed-btn.active { background: var(--ink); color: var(--gold); border-color: var(--ink); }
+  .speed-btn:hover:not(.active) { border-color: var(--gold); color: var(--gold); }
+  .test-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    font-family: 'Source Serif 4', serif;
+    font-size: 12px;
+    font-weight: 600;
+    border: 1px solid rgba(184,134,11,0.4);
+    border-radius: 16px;
+    background: var(--gold-light);
+    color: var(--gold);
+    cursor: pointer;
+    transition: all .15s;
+    flex-shrink: 0;
+  }
+  .test-btn:hover { background: #ecd98a; }
+  .test-btn.speaking { background: #fde;  border-color: var(--rust); color: var(--rust); }
+  .test-btn::before { content: "▶"; font-size: 9px; }
+  .test-btn.speaking::before { content: "◼"; }
+  .voice-status {
+    font-size: 11px;
+    color: var(--forest);
+    font-style: italic;
+    flex-shrink: 0;
+    display: none;
+  }
+  .voice-status.show { display: inline; }
+
+  /* ── DEMO CONTENT BELOW ── */
+  .demo-wrap { max-width: 680px; margin: 3rem auto; padding: 0 1.25rem; }
+  .demo-section { background: var(--cream); border: 1px solid var(--border); border-left: 4px solid var(--gold); border-radius: var(--radius); padding: 1.5rem; margin-bottom: 1.5rem; }
+  .demo-section h2 { font-family: 'Playfair Display', serif; font-size: 20px; margin-bottom: 10px; }
+  .demo-section p { font-size: 15px; line-height: 1.8; color: #3A3730; margin-bottom: 10px; }
+  .listen-btn { display: inline-flex; align-items: center; gap: 5px; padding: 4px 12px; font-family: 'Source Serif 4', serif; font-size: 12px; font-weight: 600; border: 1px solid var(--border); border-radius: 16px; background: #fff; color: var(--muted); cursor: pointer; transition: all .15s; margin-left: 8px; vertical-align: middle; }
+  .listen-btn:hover { border-color: var(--gold); color: var(--gold); }
+  .listen-btn.speaking { border-color: var(--rust); color: var(--rust); background: #fff5f5; }
+  .listen-btn::before { content: "▶"; font-size: 9px; }
+  .listen-btn.speaking::before { content: "◼"; }
+  .word-chip { display: inline-block; padding: 6px 12px; margin: 4px; background: #fff; border: 1px solid var(--border); border-radius: 7px; font-family: 'Playfair Display', serif; font-size: 16px; font-weight: 700; cursor: pointer; transition: all .15s; }
+  .word-chip:hover { border-color: var(--gold); color: var(--gold); background: var(--gold-light); }
+  .word-chip.speaking { border-color: var(--rust); background: #fff5f5; color: var(--rust); }
+  .info-box { background: var(--gold-light); border: 1px solid rgba(184,134,11,0.3); border-radius: var(--radius); padding: 1rem 1.25rem; margin: 1rem 0; font-size: 14px; line-height: 1.7; }
+  .note { font-size: 12px; color: var(--muted); font-style: italic; margin-top: 6px; }
+</style>
+</head>
+<body>
+
+<!-- SITE HEADER -->
+<header class="site-header">
+  <span class="brand">The Reading Blueprint</span>
+  <span class="phase-tag">Voice Settings Demo</span>
+</header>
+
+<!-- ══════════════════════════════════════════════════
+     VOICE CONTROL BAR
+     This bar appears on every chapter page.
+     Students pick their voice once — it is saved
+     and used for all audio on the page.
+══════════════════════════════════════════════════ -->
+<div class="voice-bar" id="voice-bar">
+  <span class="voice-bar-label">🔊 Voice</span>
+
+  <select class="voice-select" id="voice-select" onchange="onVoiceChange()">
+    <option value="">Loading voices...</option>
+  </select>
+
+  <div class="speed-group">
+    <span class="speed-label">Speed</span>
+    <button class="speed-btn" onclick="setSpeed(0.6, this)">Slow</button>
+    <button class="speed-btn active" onclick="setSpeed(0.85, this)">Normal</button>
+    <button class="speed-btn" onclick="setSpeed(1.1, this)">Fast</button>
+  </div>
+
+  <button class="test-btn" id="test-btn" onclick="testVoice(this)">Test voice</button>
+  <span class="voice-status" id="voice-status">✓ Voice saved</span>
+</div>
+
+<!-- DEMO CONTENT -->
+<div class="demo-wrap">
+
+  <div class="info-box">
+    <strong>How this works:</strong> The voice bar above appears on every chapter page. Students choose their preferred voice from the dropdown and pick a speed. Tap <em>Test voice</em> to hear a sample. The choice is remembered for the whole session.
+  </div>
+
+  <div class="demo-section">
+    <h2>Section 1.1 — What Is the Alphabet?
+      <button class="listen-btn" onclick="speakBtn('The English alphabet is a set of 26 symbols called letters. Each letter represents one or more sounds in spoken English. Think of the alphabet as the keys on a piano — combined in the right sequences, they produce every word, every sentence, every story.', this)">Listen</button>
+    </h2>
+    <p>The English alphabet is a set of <strong>26 symbols</strong> called letters. Each letter represents one or more sounds in spoken English. Think of the alphabet as the keys on a piano — combined in the right sequences, they produce every word, every sentence, every story.</p>
+  </div>
+
+  <div class="demo-section" style="border-left-color: var(--forest)">
+    <h2>Tap any word to hear it</h2>
+    <p style="margin-bottom:12px;">These words all use the selected voice and speed:</p>
+    <div>
+      <span class="word-chip" onclick="sayWord('alphabet', this)">alphabet</span>
+      <span class="word-chip" onclick="sayWord('vowel', this)">vowel</span>
+      <span class="word-chip" onclick="sayWord('consonant', this)">consonant</span>
+      <span class="word-chip" onclick="sayWord('reading', this)">reading</span>
+      <span class="word-chip" onclick="sayWord('phonics', this)">phonics</span>
+      <span class="word-chip" onclick="sayWord('syllable', this)">syllable</span>
+      <span class="word-chip" onclick="sayWord('blend', this)">blend</span>
+      <span class="word-chip" onclick="sayWord('fluency', this)">fluency</span>
+    </div>
+    <p class="note">All words use whichever voice and speed you selected above.</p>
+  </div>
+
+  <div class="demo-section" style="border-left-color: var(--rust)">
+    <h2>How to add this to your chapters</h2>
+    <p>Once you confirm you're happy with how the voice bar looks and works, I will add it to <strong>Chapter 1</strong> and <strong>Chapter 2</strong>, and every chapter we build going forward will include it automatically.</p>
+    <p>Your students can switch voices at any time — the change applies instantly to all buttons on the page.</p>
+  </div>
+
+</div>
+
+<script>
+// ══════════════════════════════════════════════════
+// VOICE ENGINE — copy this entire <script> block
+// into every chapter file
+// ══════════════════════════════════════════════════
+
+let voices = [];
+let selectedVoiceIndex = -1; // -1 = browser default
+let speechRate = 0.85;
+
+// Load available voices
+function loadVoices() {
+  voices = window.speechSynthesis.getVoices();
+  const select = document.getElementById('voice-select');
+  if (!voices.length) return;
+
+  // Filter to English voices only
+  const engVoices = voices.filter(v =>
+    v.lang.startsWith('en') || v.lang.startsWith('EN')
+  );
+
+  select.innerHTML = '<option value="-1">🔊 Browser default</option>';
+  engVoices.forEach((v, i) => {
+    const idx = voices.indexOf(v);
+    const label = v.name + ' (' + v.lang + ')' + (v.localService ? ' ★' : '');
+    const opt = document.createElement('option');
+    opt.value = idx;
+    opt.textContent = label;
+    select.appendChild(opt);
+  });
+
+  // Restore saved preference
+  const saved = localStorage.getItem('rbVoiceIndex');
+  const savedRate = localStorage.getItem('rbSpeechRate');
+  if (saved !== null) {
+    select.value = saved;
+    selectedVoiceIndex = parseInt(saved);
+  }
+  if (savedRate !== null) {
+    speechRate = parseFloat(savedRate);
+    // Update speed buttons
+    document.querySelectorAll('.speed-btn').forEach(btn => {
+      btn.classList.toggle('active', parseFloat(btn.getAttribute('data-rate') || 0) === speechRate);
+    });
+  }
+}
+
+// Set speed buttons with data-rate attributes
+document.querySelectorAll('.speed-btn').forEach((btn, i) => {
+  const rates = [0.6, 0.85, 1.1];
+  btn.setAttribute('data-rate', rates[i]);
+});
+
+function onVoiceChange() {
+  const select = document.getElementById('voice-select');
+  selectedVoiceIndex = parseInt(select.value);
+  localStorage.setItem('rbVoiceIndex', selectedVoiceIndex);
+  showStatus();
+}
+
+function setSpeed(rate, btn) {
+  speechRate = rate;
+  localStorage.setItem('rbSpeechRate', rate);
+  document.querySelectorAll('.speed-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  showStatus();
+}
+
+function showStatus() {
+  const status = document.getElementById('voice-status');
+  status.classList.add('show');
+  setTimeout(() => status.classList.remove('show'), 2000);
+}
+
+// Core speak function — used by ALL buttons
+function speakBtn(text, btn) {
+  if (!window.speechSynthesis) return;
+  window.speechSynthesis.cancel();
+  document.querySelectorAll('.listen-btn.speaking, .hero-listen-btn.speaking, .test-btn.speaking').forEach(b => b.classList.remove('speaking'));
+  const utt = new SpeechSynthesisUtterance(text);
+  utt.rate = speechRate;
+  if (selectedVoiceIndex >= 0 && voices[selectedVoiceIndex]) {
+    utt.voice = voices[selectedVoiceIndex];
+    utt.lang = voices[selectedVoiceIndex].lang;
+  } else {
+    utt.lang = 'en-GB';
+  }
+  if (btn) {
+    btn.classList.add('speaking');
+    utt.onend = () => btn.classList.remove('speaking');
+    utt.onerror = () => btn.classList.remove('speaking');
+  }
+  window.speechSynthesis.speak(utt);
+}
+
+function sayWord(word, chip) {
+  if (!window.speechSynthesis) return;
+  window.speechSynthesis.cancel();
+  document.querySelectorAll('.word-chip.speaking').forEach(c => c.classList.remove('speaking'));
+  if (chip) {
+    chip.classList.add('speaking');
+  }
+  const utt = new SpeechSynthesisUtterance(word);
+  utt.rate = speechRate * 0.95;
+  if (selectedVoiceIndex >= 0 && voices[selectedVoiceIndex]) {
+    utt.voice = voices[selectedVoiceIndex];
+    utt.lang = voices[selectedVoiceIndex].lang;
+  } else {
+    utt.lang = 'en-GB';
+  }
+  if (chip) utt.onend = () => chip.classList.remove('speaking');
+  window.speechSynthesis.speak(utt);
+}
+
+function testVoice(btn) {
+  speakBtn('Hello. This is a test of your selected voice. The quick brown fox jumps over the lazy dog.', btn);
+}
+
+// Init
+if (window.speechSynthesis) {
+  if (speechSynthesis.onvoiceschanged !== undefined) {
+    speechSynthesis.onvoiceschanged = loadVoices;
+  }
+  loadVoices();
+}
+</script>
+</body>
+</html>
